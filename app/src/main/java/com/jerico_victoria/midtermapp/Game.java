@@ -1,11 +1,16 @@
 package com.jerico_victoria.midtermapp;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.widget.ProgressBar;
+import android.widget.Button;
 import android.view.View;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,16 +19,20 @@ import android.widget.Toast;
 import android.os.Handler;
 
 public class Game extends AppCompatActivity {
-    TextView name, timer, index;
+    TextView name, timer, score;
     String value;
     Toast toast;
     ProgressBar timerbar;
+    Button pause, resume, restart;
+    RelativeLayout pause_overlay;
     private String[] id;
     private TextView[] box = new TextView[49];
-    int j, temp;
-    int num1 = -1, num2 = 1;
+    int j, temp, num1 = -1, num2 = 1, multiplier = 1, userscore, counter;
+    private CountDownTimer time;
+    long timeLong = 100000;
     List<Integer> solution = new ArrayList<>();
     List<Integer> disabledBoxes = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,6 +41,13 @@ public class Game extends AppCompatActivity {
         name = (TextView)findViewById(R.id.PlayerName);
         timerbar = (ProgressBar)findViewById(R.id.timerProgress);
         timer = (TextView)findViewById(R.id.Timer);
+        score = (TextView)findViewById(R.id.Score);
+        pause = (Button)findViewById(R.id.PauseButton);
+        resume = (Button)findViewById(R.id.ResumeButton);
+        restart = (Button)findViewById(R.id.RestartButton);
+        pause_overlay = (RelativeLayout)findViewById(R.id.pause_overlay);
+
+        timerbar.setProgressTintList(ColorStateList.valueOf(Color.parseColor("#6200EE")));
 
         CreateArraySet(); //Generate 48 numbers (function below)
 
@@ -52,6 +68,42 @@ public class Game extends AppCompatActivity {
             value = "Player";
         }
 
+        //Pause the timer and game
+        pause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                time.cancel();
+                timer.setText("Game Paused"); //Text timer
+                pause.setEnabled(false);
+                restart.setEnabled(false);
+                pause_overlay.setVisibility(View.VISIBLE);
+                disableButton(); //Disable buttons habang nakapause
+            }
+        });
+
+        //Resume the timer and game
+        resume.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                StartTimer();
+                pause.setEnabled(true);
+                restart.setEnabled(true);
+                enableButton(); //Enable ALL buttons
+                disabledBoxes(); // Disable yung mga TAPOS NA para maiwasan ang bug.
+                pause_overlay.setVisibility(View.GONE);
+            }
+        });
+
+        restart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                time.cancel();
+                Intent main = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(main);
+                finish();
+            }
+        });
+
         name.setText(value);
         AttachNumbersToBox();
         StartTimer();
@@ -59,15 +111,20 @@ public class Game extends AppCompatActivity {
 
     //100s timer function
     private void StartTimer() {
-        new CountDownTimer(100000, 1000) {
+        time = new CountDownTimer(timeLong, 1000) {
 
             public void onTick(long millisUntilFinished) {
                 timerbar.setProgress((int) (millisUntilFinished / 1000)); //Progressbar
                 timer.setText("Time Remaining: " + millisUntilFinished / 1000); //Text timer
+                timeLong = millisUntilFinished;
             }
 
             public void onFinish() {
                 timer.setText("Time's Up!");
+                Intent i = new Intent(Game.this, GameOver.class);
+                i.putExtra("score", userscore);
+                startActivity(i);
+                finish();
             }
         }.start();
     }
@@ -83,7 +140,7 @@ public class Game extends AppCompatActivity {
             solution.add(i);
         }
 
-        //Shuff 1st set and 2nd set (para by pair sila)
+        //Shuffle 1st set and 2nd set (para by pair sila)
         Collections.shuffle(solution);
     }
 
@@ -127,15 +184,32 @@ public class Game extends AppCompatActivity {
         if (first.equals(second)){
             box[num1].setBackgroundResource(R.color.purple_500);
             box[num2].setBackgroundResource(R.color.purple_500);
+            userscore += 2 * multiplier;
+            counter++;
+            score.setText("Score: " + userscore);
             disabledBoxes.add(num1);
             disabledBoxes.add(num2);
-        } else{
+            time.cancel(); //Stop the time
+            timeLong += 5000; // Add 5 seconds
+            StartTimer(); //Continue timer
+            multiplier += 1; //add 1 to multiplier;
+
+            //Checker. If completed na lahat then open next activity.
+            if (counter == 24){
+                Intent i = new Intent(Game.this, GameOver.class);
+                i.putExtra("score", userscore);
+                startActivity(i);
+                finish();
+            }
+
+        } else {
             final Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     box[num1].setTextColor(Color.TRANSPARENT);
                     box[num2].setTextColor(Color.TRANSPARENT);
+                    multiplier = 1; //set multiplier to 1;
                 }
             }, 500);
         }

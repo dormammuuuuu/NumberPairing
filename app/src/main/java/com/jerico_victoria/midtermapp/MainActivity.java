@@ -18,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         username = (EditText)findViewById(R.id.UserName);
         next = (ImageButton)findViewById(R.id.NextButton);
+        getSupportActionBar().hide();
 
         next.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent i = new Intent(MainActivity.this, Game.class);
                 i.putExtra("user", user);
                 startActivity(i);
+                finish();
             }
         });
     }

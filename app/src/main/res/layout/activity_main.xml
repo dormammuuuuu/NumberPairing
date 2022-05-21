@@ -14,7 +14,6 @@
         android:layout_marginEnd="100dp"
         android:ems="10"
         android:hint="Enter your name"
-        android:text="Anjo"
         android:inputType="textPersonName"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
